@@ -424,6 +424,15 @@ window.GAME_DATA = {
     "m_qosh": "ui_m_qosh",
     "m_juft": "ui_m_juft",
     "m_takror": "ui_m_takror",
+    "m_ovoz": "ui_m_ovoz",
+    "m_katta": "ui_m_katta",
+    "m_kayfiyat": "ui_m_kayfiyat",
+    "m_harf": "ui_m_harf",
+    "m_tez": "ui_m_tez",
+    "kattasi": "ui_kattasi",
+    "kichigi": "ui_kichigi",
+    "tayyor": "ui_tayyor",
+    "tez": "ui_tez",
     "qancha": "ui_qancha",
     "qosh_savol": "ui_qosh_savol",
     "yodla": "ui_yodla",
@@ -475,6 +484,94 @@ window.GAME_DATA = {
     "10": {
       "word": "o'n",
       "audio": "num_10"
+    }
+  },
+  "moods": {
+    "xursand": {
+      "emoji": "😊",
+      "say": "Xursand",
+      "audio": "mood_xursand"
+    },
+    "xafa": {
+      "emoji": "😢",
+      "say": "Xafa",
+      "audio": "mood_xafa"
+    },
+    "jahldor": {
+      "emoji": "😠",
+      "say": "Jahldor",
+      "audio": "mood_jahldor"
+    },
+    "qorqqan": {
+      "emoji": "😨",
+      "say": "Qo'rqqan",
+      "audio": "mood_qorqqan"
+    },
+    "kulgan": {
+      "emoji": "😄",
+      "say": "Kulgan",
+      "audio": "mood_kulgan"
+    },
+    "uyquchi": {
+      "emoji": "😴",
+      "say": "Uyquchi",
+      "audio": "mood_uyquchi"
+    }
+  },
+  "letters": {
+    "A": {
+      "audio": "let_A"
+    },
+    "B": {
+      "audio": "let_B"
+    },
+    "D": {
+      "audio": "let_D"
+    },
+    "E": {
+      "audio": "let_E"
+    },
+    "G": {
+      "audio": "let_G"
+    },
+    "H": {
+      "audio": "let_H"
+    },
+    "I": {
+      "audio": "let_I"
+    },
+    "K": {
+      "audio": "let_K"
+    },
+    "L": {
+      "audio": "let_L"
+    },
+    "M": {
+      "audio": "let_M"
+    },
+    "N": {
+      "audio": "let_N"
+    },
+    "O": {
+      "audio": "let_O"
+    },
+    "P": {
+      "audio": "let_P"
+    },
+    "R": {
+      "audio": "let_R"
+    },
+    "S": {
+      "audio": "let_S"
+    },
+    "T": {
+      "audio": "let_T"
+    },
+    "U": {
+      "audio": "let_U"
+    },
+    "Z": {
+      "audio": "let_Z"
     }
   },
   "countables": [

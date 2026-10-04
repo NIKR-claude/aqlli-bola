@@ -169,6 +169,11 @@ function renderMenu(){
     <button class="mode-btn" onclick="modeQosh()"><span class="ico">➕</span> Qo'shib hisobla</button>
     <button class="mode-btn" onclick="modeJuft()"><span class="ico">🎴</span> Juftini top</button>
     <button class="mode-btn" onclick="modeTakror()"><span class="ico">🔁</span> Takrorla</button>
+    <button class="mode-btn" onclick="modeOvoz()"><span class="ico">🔊</span> Eshit va top</button>
+    <button class="mode-btn" onclick="modeKatta()"><span class="ico">📏</span> Kattasini top</button>
+    <button class="mode-btn" onclick="modeKayfiyat()"><span class="ico">😊</span> Kayfiyatni top</button>
+    <button class="mode-btn" onclick="modeHarf()"><span class="ico">🔤</span> Harf top</button>
+    <button class="mode-btn" onclick="modeTez()"><span class="ico">⚡</span> Tez bos</button>
   </div>`;
   playAudio('ui_welcome');
 }
@@ -411,6 +416,115 @@ function modeTakror(){
   }
   playAudio('ui_m_takror');
   setTimeout(round,1200);
+}
+
+/* ---------------- 10. ESHIT VA TOP ---------------- */
+function modeOvoz(){
+  const items = shuffle(allRealWords()).slice(0,4);
+  const target = rand(items);
+  app.innerHTML = topbar("Eshit va top") +
+    `<div class="prompt">Men aytgan narsani top</div>
+     <button class="btn-say" onclick="playAudio('${target.audio}')">🔊 Yana eshit</button>
+     <div class="grid c2" id="g" style="margin-top:10px"></div>`;
+  const g=document.getElementById('g');
+  items.forEach(it=>{
+    const c=document.createElement('div'); c.className='card'; c.textContent=it.emoji;
+    c.onclick=()=>{ if(it.key===target.key){ playAudio(it.audio); c.classList.add('correct'); setTimeout(()=>praise(modeOvoz),700);} else { wrong(c);} };
+    g.appendChild(c);
+  });
+  setTimeout(()=>playAudio(target.audio), 400);
+}
+
+/* ---------------- 11. KATTASINI TOP ---------------- */
+function modeKatta(){
+  const emoji = rand(D.countables);
+  const askBig = Math.random()<0.5;
+  // ikki o'lcham: katta va kichik
+  const bigSize = 18 + Math.floor(Math.random()*6);   // vh
+  const smallSize = 7 + Math.floor(Math.random()*3);
+  const leftBig = Math.random()<0.5;
+  app.innerHTML = topbar("Kattasini top") +
+    `<div class="prompt">${askBig?"Kattasini bos":"Kichkinasini bos"}</div>
+     <div class="grid c2" id="g" style="align-items:center"></div>`;
+  const g=document.getElementById('g');
+  const makeCard=(size,isBig)=>{
+    const c=document.createElement('div'); c.className='card'; c.style.fontSize=size+'vh';
+    c.innerHTML=`<span style="font-size:${size}vh">${emoji}</span>`;
+    c.onclick=()=>{ if(isBig===askBig){ c.classList.add('correct'); playAudio(askBig?'ui_kattasi':'ui_kichigi'); setTimeout(()=>praise(modeKatta),700);} else { wrong(c);} };
+    return c;
+  };
+  const bigCard=makeCard(bigSize,true), smallCard=makeCard(smallSize,false);
+  if(leftBig){ g.appendChild(bigCard); g.appendChild(smallCard); } else { g.appendChild(smallCard); g.appendChild(bigCard); }
+  playAudio(askBig?'ui_kattasi':'ui_kichigi');
+}
+
+/* ---------------- 12. KAYFIYATNI TOP ---------------- */
+function modeKayfiyat(){
+  const all = Object.entries(D.moods).map(([k,v])=>({key:k,...v}));
+  const items = shuffle(all).slice(0,4);
+  const target = rand(items);
+  app.innerHTML = topbar("Kayfiyatni top") +
+    `<div class="prompt">Qaysi biri <b>${target.say.toLowerCase()}</b>?</div>
+     <button class="btn-say" onclick="playAudio('${target.audio}')">🔊 Yana eshit</button>
+     <div class="grid c2" id="g" style="margin-top:10px"></div>`;
+  const g=document.getElementById('g');
+  items.forEach(it=>{
+    const c=document.createElement('div'); c.className='card'; c.textContent=it.emoji;
+    c.onclick=()=>{ playAudio(it.audio); if(it.key===target.key){ c.classList.add('correct'); setTimeout(()=>praise(modeKayfiyat),700);} else { wrong(c);} };
+    g.appendChild(c);
+  });
+  setTimeout(()=>playAudio(target.audio), 400);
+}
+
+/* ---------------- 13. HARF TOP ---------------- */
+function modeHarf(){
+  const all = Object.keys(D.letters);
+  const chosen = shuffle(all).slice(0,4);
+  const target = rand(chosen);
+  app.innerHTML = topbar("Harf top") +
+    `<div class="prompt">Men aytgan harfni top</div>
+     <button class="btn-say" onclick="playAudio('${D.letters[target].audio}')">🔊 Yana eshit</button>
+     <div class="grid c2" id="g" style="margin-top:10px"></div>`;
+  const g=document.getElementById('g');
+  chosen.forEach(ch=>{
+    const c=document.createElement('div'); c.className='card'; c.style.fontWeight='800'; c.style.color='#4a3aff'; c.textContent=ch;
+    c.onclick=()=>{ playAudio(D.letters[ch].audio); if(ch===target){ c.classList.add('correct'); setTimeout(()=>praise(modeHarf),700);} else { wrong(c);} };
+    g.appendChild(c);
+  });
+  setTimeout(()=>playAudio(D.letters[target].audio), 400);
+}
+
+/* ---------------- 14. TEZ BOS (reaksiya) ---------------- */
+function modeTez(){
+  app.innerHTML = topbar("Tez bos") +
+    `<div class="prompt" id="pr">Tayyor bo'l...</div>
+     <div id="zone" style="flex:1;display:flex;align-items:center;justify-content:center;font-size:22vh"></div>`;
+  const zone=document.getElementById('zone');
+  const pr=document.getElementById('pr');
+  let armed=false, startT=0, done=false;
+  playAudio('ui_tayyor');
+  // tasodifiy kutish, keyin yulduz chiqadi
+  const delay = 1200 + Math.random()*2500;
+  const timer=setTimeout(()=>{
+    armed=true; startT=Date.now();
+    zone.textContent='⭐'; zone.style.cursor='pointer';
+    pr.textContent='BOS!'; playAudio('ui_tez');
+  }, delay);
+  zone.onclick=()=>{
+    if(done) return;
+    if(!armed){
+      // erta bosdi
+      clearTimeout(timer); done=true;
+      pr.textContent='Shoshma! Yulduzni kut'; haptic('err');
+      playAudio('ui_retry1');
+      setTimeout(modeTez, 1200);
+    } else {
+      done=true;
+      const ms=Date.now()-startT;
+      zone.classList.add('correct');
+      setTimeout(()=>praise(modeTez), 500);
+    }
+  };
 }
 
 renderMenu();
