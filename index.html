@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Aqlli bola</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script src="data.js"></script>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; user-select:none; }
+  html,body { height:100%; overflow:hidden; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; }
+  body {
+    background: linear-gradient(160deg,#6a5cff 0%,#9b6bff 50%,#ff6ba6 100%);
+    color:#fff; display:flex; flex-direction:column; height:100vh;
+    touch-action:manipulation;
+  }
+  #app { flex:1; display:flex; flex-direction:column; padding:14px; overflow:hidden; }
+  .topbar { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:8px; }
+  .btn-back { background:rgba(255,255,255,.22); border:none; color:#fff; font-size:22px; width:44px;height:44px; border-radius:14px; cursor:pointer; }
+  .stars { font-size:20px; font-weight:800; background:rgba(255,255,255,.22); padding:8px 14px; border-radius:14px; display:flex; align-items:center; gap:6px; }
+  .title { font-size:19px; font-weight:800; text-shadow:0 2px 6px rgba(0,0,0,.2); }
+  .prompt { font-size:20px; font-weight:700; text-align:center; margin:6px 0 14px; min-height:28px; text-shadow:0 1px 4px rgba(0,0,0,.2); }
+
+  /* MENU */
+  .menu { display:flex; flex-direction:column; gap:14px; justify-content:center; flex:1; }
+  .menu h1 { font-size:30px; text-align:center; margin-bottom:8px; text-shadow:0 3px 10px rgba(0,0,0,.25); }
+  .mode-btn {
+    background:#fff; color:#4a3aff; border:none; border-radius:22px; padding:18px 20px;
+    font-size:21px; font-weight:800; cursor:pointer; display:flex; align-items:center; gap:14px;
+    box-shadow:0 8px 20px rgba(0,0,0,.18); transition:transform .1s;
+  }
+  .mode-btn:active { transform:scale(.96); }
+  .mode-btn .ico { font-size:30px; }
+
+  /* GRID of cards */
+  .grid { display:grid; gap:12px; flex:1; align-content:center; }
+  .grid.c2 { grid-template-columns:1fr 1fr; }
+  .grid.c3 { grid-template-columns:1fr 1fr 1fr; }
+  .card {
+    background:#fff; border-radius:22px; display:flex; align-items:center; justify-content:center;
+    font-size:14vh; cursor:pointer; box-shadow:0 8px 18px rgba(0,0,0,.18);
+    aspect-ratio:1/1; transition:transform .1s; position:relative; overflow:hidden;
+  }
+  .card:active { transform:scale(.95); }
+  .card.small { font-size:9vh; }
+  .card.correct { animation:pop .5s; box-shadow:0 0 0 6px #4cd964, 0 8px 18px rgba(0,0,0,.2); }
+  .card.wrong { animation:shake .4s; box-shadow:0 0 0 6px #ff5a5a; }
+  .card.hidden-c { background:rgba(255,255,255,.25); font-size:10vh; }
+  @keyframes pop { 0%{transform:scale(1)} 50%{transform:scale(1.15)} 100%{transform:scale(1)} }
+  @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-8px)} 75%{transform:translateX(8px)} }
+
+  /* sentence builder */
+  .sent-slots { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; min-height:80px; margin-bottom:10px; }
+  .slot { width:72px;height:72px; border-radius:18px; background:rgba(255,255,255,.2); border:3px dashed rgba(255,255,255,.5);
+          display:flex;align-items:center;justify-content:center; font-size:38px; }
+  .slot.filled { background:#fff; border-style:solid; }
+  .sent-pool { display:flex; gap:10px; justify-content:center; flex-wrap:wrap; }
+  .chip { width:78px;height:78px; border-radius:18px; background:#fff; display:flex;align-items:center;justify-content:center;
+          font-size:40px; cursor:pointer; box-shadow:0 6px 14px rgba(0,0,0,.18); transition:transform .1s; }
+  .chip:active { transform:scale(.92); }
+  .chip.used { opacity:.25; pointer-events:none; }
+
+  .btn-say { background:rgba(255,255,255,.22); border:none;color:#fff;font-size:17px;font-weight:700;
+             padding:12px 22px;border-radius:16px;cursor:pointer; margin:0 auto; display:flex;align-items:center;gap:8px; }
+
+  /* overlay praise */
+  .overlay { position:fixed; inset:0; display:none; align-items:center; justify-content:center; flex-direction:column;
+             background:rgba(0,0,0,.35); z-index:50; }
+  .overlay.show { display:flex; animation:fade .3s; }
+  @keyframes fade { from{opacity:0} to{opacity:1} }
+  .overlay .big { font-size:90px; animation:pop .6s; }
+  .overlay .txt { font-size:30px; font-weight:800; margin-top:10px; text-shadow:0 2px 8px rgba(0,0,0,.3); }
+  .confetti { position:fixed; top:-20px; font-size:26px; z-index:49; animation:fall linear forwards; }
+  @keyframes fall { to { transform:translateY(110vh) rotate(360deg); opacity:.2; } }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div class="overlay" id="overlay"><div class="big" id="ovBig">⭐</div><div class="txt" id="ovTxt"></div></div>
+
+<script>
+const D = window.GAME_DATA;
+const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
+if (tg) { tg.ready(); tg.expand(); }
+
+const app = document.getElementById('app');
+const overlay = document.getElementById('overlay');
+let stars = 0;
+let audioCache = {};
+
+function playAudio(key, cb){
+  try {
+    if(!audioCache[key]) audioCache[key] = new Audio('audio/'+key+'.mp3');
+    const a = audioCache[key];
+    a.currentTime = 0;
+    if(cb){ a.onended = cb; }
+    a.play().catch(()=>{ if(cb) cb(); });
+  } catch(e){ if(cb) cb(); }
+}
+function haptic(type){ try{ if(tg&&tg.HapticFeedback){ type==='ok'?tg.HapticFeedback.notificationOccurred('success'):tg.HapticFeedback.notificationOccurred('error'); } }catch(e){} }
+function shuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; }
+function rand(a){ return a[Math.floor(Math.random()*a.length)]; }
+function wordsByCat(cat){ return Object.entries(D.words).filter(([k,v])=>v.cat===cat).map(([k,v])=>({key:k,...v})); }
+function allRealWords(){ return Object.entries(D.words).filter(([k,v])=>['hayvon','meva','transport','narsa'].includes(v.cat)).map(([k,v])=>({key:k,...v})); }
+
+function setStars(n){ stars=n; const el=document.getElementById('starCount'); if(el) el.textContent=stars; }
+function addStar(){ setStars(stars+1); }
+
+function confetti(){
+  const em=['⭐','🎉','✨','🌟','🎈'];
+  for(let i=0;i<18;i++){
+    const c=document.createElement('div'); c.className='confetti'; c.textContent=rand(em);
+    c.style.left=Math.random()*100+'vw'; c.style.animationDuration=(1.5+Math.random()*1.5)+'s';
+    document.body.appendChild(c); setTimeout(()=>c.remove(),3000);
+  }
+}
+function praise(onDone){
+  haptic('ok'); addStar(); confetti();
+  const p=[D.ui.praise1,D.ui.praise2,D.ui.praise3,D.ui.praise4];
+  const key=rand(p);
+  const labels={[D.ui.praise1]:'Barakalla!',[D.ui.praise2]:'Juda zo\'r!',[D.ui.praise3]:'Aqlli bola!',[D.ui.praise4]:'To\'g\'ri topding!'};
+  document.getElementById('ovBig').textContent=rand(['⭐','🎉','🏆','🌟']);
+  document.getElementById('ovTxt').textContent=labels[key]||'Barakalla!';
+  overlay.classList.add('show');
+  playAudio(key, ()=>{});
+  setTimeout(()=>{ overlay.classList.remove('show'); if(onDone) onDone(); }, 1400);
+}
+function wrong(el){ haptic('err'); el.classList.add('wrong'); setTimeout(()=>el.classList.remove('wrong'),400); playAudio(rand([D.ui.retry1,D.ui.retry2])); }
+
+function topbar(title){
+  return `<div class="topbar">
+    <button class="btn-back" onclick="renderMenu()">⬅</button>
+    <div class="title">${title}</div>
+    <div class="stars">⭐ <span id="starCount">${stars}</span></div>
+  </div>`;
+}
+
+/* ---------------- MENU ---------------- */
+function renderMenu(){
+  app.innerHTML = `
+  <div class="menu">
+    <h1>🧠 Aqlli bola</h1>
+    <button class="mode-btn" onclick="modeGap()"><span class="ico">🗣</span> Gap tuz</button>
+    <button class="mode-btn" onclick="modeOrtiq()"><span class="ico">🔍</span> Ortiqchasini top</button>
+    <button class="mode-btn" onclick="modeDavom()"><span class="ico">➡️</span> Davomini top</button>
+    <button class="mode-btn" onclick="modeXotira()"><span class="ico">🧩</span> Nima yo'qoldi?</button>
+    <button class="mode-btn" onclick="modeTopish()"><span class="ico">🤔</span> Topishmoq</button>
+  </div>`;
+  playAudio('ui_welcome');
+}
+
+/* ---------------- 1. GAP TUZ ---------------- */
+function modeGap(){
+  const s = rand(D.sentences);
+  const order = shuffle(s.parts);
+  let placed = [];
+  app.innerHTML = topbar('Gap tuz') +
+    `<div class="prompt">Rasmlarni to'g'ri tartibda bos</div>
+     <div class="sent-slots" id="slots"></div>
+     <div class="sent-pool" id="pool"></div>`;
+  function drawSlots(){
+    const el=document.getElementById('slots'); el.innerHTML='';
+    s.parts.forEach((p,i)=>{
+      const d=document.createElement('div'); d.className='slot'+(placed[i]?' filled':'');
+      d.textContent = placed[i]?D.words[placed[i]].emoji:'';
+      el.appendChild(d);
+    });
+  }
+  function drawPool(){
+    const el=document.getElementById('pool'); el.innerHTML='';
+    order.forEach(k=>{
+      const c=document.createElement('div');
+      c.className='chip'+(placed.includes(k)?' used':'');
+      c.textContent=D.words[k].emoji;
+      c.onclick=()=>{ playAudio(D.words[k].audio); const idx=placed.length; if(s.parts[idx]===k){ placed.push(k); drawSlots(); drawPool(); if(placed.length===s.parts.length){ setTimeout(()=>playAudio(s.audio, ()=>praise(modeGap)),250);} } else { wrong(c);} };
+      el.appendChild(c);
+    });
+  }
+  drawSlots(); drawPool();
+  playAudio('ui_m_gap');
+}
+
+/* ---------------- 2. ORTIQCHASINI TOP ---------------- */
+function modeOrtiq(){
+  const cats=['hayvon','meva','transport'];
+  const mainCat=rand(cats), otherCat=rand(cats.filter(c=>c!==mainCat));
+  const mains=shuffle(wordsByCat(mainCat)).slice(0,3);
+  const odd=rand(wordsByCat(otherCat));
+  const items=shuffle([...mains,odd]);
+  app.innerHTML = topbar('Ortiqchasini top') +
+    `<div class="prompt">Qaysi biri boshqacha?</div><div class="grid c2" id="g"></div>`;
+  const g=document.getElementById('g');
+  items.forEach(it=>{
+    const c=document.createElement('div'); c.className='card'; c.textContent=it.emoji;
+    c.onclick=()=>{ playAudio(it.audio); if(it.key===odd.key){ c.classList.add('correct'); setTimeout(()=>praise(modeOrtiq),500);} else { wrong(c);} };
+    g.appendChild(c);
+  });
+  playAudio('ui_m_ortiq');
+}
+
+/* ---------------- 3. DAVOMINI TOP (pattern) ---------------- */
+function modeDavom(){
+  const cols=shuffle(wordsByCat('rang')).slice(0,2);
+  const a=cols[0],b=cols[1];
+  const seq=[a,b,a,b];
+  const options=shuffle([a,b,rand(wordsByCat('rang').filter(x=>x.key!==a.key&&x.key!==b.key))]);
+  const answer=a; // next after ...a,b,a,b -> a
+  app.innerHTML = topbar('Davomini top') +
+    `<div class="prompt">Keyin qaysi rang keladi?</div>
+     <div class="sent-slots" style="min-height:70px">${seq.map(x=>`<div class="slot filled">${x.emoji}</div>`).join('')}<div class="slot">❓</div></div>
+     <div class="sent-pool" id="opt"></div>`;
+  const opt=document.getElementById('opt');
+  options.forEach(o=>{
+    const c=document.createElement('div'); c.className='chip'; c.textContent=o.emoji;
+    c.onclick=()=>{ playAudio(o.audio); if(o.key===answer.key){ c.style.boxShadow='0 0 0 5px #4cd964'; setTimeout(()=>praise(modeDavom),500);} else { wrong(c);} };
+    opt.appendChild(c);
+  });
+  playAudio('ui_m_davom');
+}
+
+/* ---------------- 4. NIMA YO'QOLDI (xotira) ---------------- */
+function modeXotira(){
+  const items=shuffle(allRealWords()).slice(0,4);
+  app.innerHTML = topbar('Nima yo\'qoldi?') +
+    `<div class="prompt" id="pr">Yaxshilab yodda tut...</div><div class="grid c2" id="g"></div>`;
+  const g=document.getElementById('g');
+  items.forEach(it=>{ const c=document.createElement('div'); c.className='card'; c.textContent=it.emoji; g.appendChild(c); });
+  playAudio('ui_m_xotira');
+  setTimeout(()=>{
+    const gone=rand(items);
+    const cells=[...g.children];
+    cells.forEach((c,i)=>{ if(items[i].key===gone.key){ c.className='card hidden-c'; c.textContent='❓'; } });
+    document.getElementById('pr').textContent='Qaysi biri yo\'qoldi?';
+    playAudio('ui_m_xotira2');
+    cells.forEach((c,i)=>{
+      c.onclick=()=>{ const it=items[i]; playAudio(it.audio); if(it.key===gone.key){ c.className='card correct'; c.textContent=it.emoji; setTimeout(()=>praise(modeXotira),600);} else { wrong(c);} };
+    });
+  }, 2600);
+}
+
+/* ---------------- 5. TOPISHMOQ ---------------- */
+function modeTopish(){
+  const r=rand(D.riddles);
+  const correct=D.words[r.answer];
+  const others=shuffle(allRealWords().filter(w=>w.key!==r.answer)).slice(0,3);
+  const items=shuffle([{key:r.answer,...correct},...others]);
+  app.innerHTML = topbar('Topishmoq') +
+    `<div class="prompt">${r.q}</div>
+     <button class="btn-say" onclick="playAudio('${r.audio}')">🔊 Yana eshit</button>
+     <div class="grid c2" id="g" style="margin-top:10px"></div>`;
+  const g=document.getElementById('g');
+  items.forEach(it=>{
+    const c=document.createElement('div'); c.className='card'; c.textContent=it.emoji;
+    c.onclick=()=>{ playAudio(it.audio); if(it.key===r.answer){ c.classList.add('correct'); setTimeout(()=>praise(modeTopish),600);} else { wrong(c);} };
+    g.appendChild(c);
+  });
+  playAudio(r.audio);
+}
+
+renderMenu();
+</script>
+</body>
+</html>
