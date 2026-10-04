@@ -87,14 +87,24 @@ const app = document.getElementById('app');
 const overlay = document.getElementById('overlay');
 let stars = 0;
 let audioCache = {};
+let currentAudio = null;
+
+function stopAudio(){
+  if(currentAudio){
+    try { currentAudio.pause(); currentAudio.onended = null; } catch(e){}
+    currentAudio = null;
+  }
+}
 
 function playAudio(key, cb){
   try {
+    stopAudio(); // oldingi ovozni to'xtatamiz — ustma-ust tushmasin
     if(!audioCache[key]) audioCache[key] = new Audio('audio/'+key+'.mp3');
     const a = audioCache[key];
+    currentAudio = a;
     a.currentTime = 0;
-    if(cb){ a.onended = cb; }
-    a.play().catch(()=>{ if(cb) cb(); });
+    a.onended = ()=>{ if(currentAudio===a) currentAudio=null; if(cb) cb(); };
+    a.play().catch(()=>{ if(currentAudio===a) currentAudio=null; if(cb) cb(); });
   } catch(e){ if(cb) cb(); }
 }
 function haptic(type){ try{ if(tg&&tg.HapticFeedback){ type==='ok'?tg.HapticFeedback.notificationOccurred('success'):tg.HapticFeedback.notificationOccurred('error'); } }catch(e){} }
@@ -118,12 +128,17 @@ function praise(onDone){
   haptic('ok'); addStar(); confetti();
   const p=[D.ui.praise1,D.ui.praise2,D.ui.praise3,D.ui.praise4];
   const key=rand(p);
-  const labels={[D.ui.praise1]:'Barakalla!',[D.ui.praise2]:'Juda zo\'r!',[D.ui.praise3]:'Aqlli bola!',[D.ui.praise4]:'To\'g\'ri topding!'};
+  const labels={[D.ui.praise1]:'Barakalla Muhammad!',[D.ui.praise2]:'Juda zo\'r!',[D.ui.praise3]:'Aqlli bola!',[D.ui.praise4]:'To\'g\'ri topding!'};
   document.getElementById('ovBig').textContent=rand(['⭐','🎉','🏆','🌟']);
   document.getElementById('ovTxt').textContent=labels[key]||'Barakalla!';
   overlay.classList.add('show');
-  playAudio(key, ()=>{});
-  setTimeout(()=>{ overlay.classList.remove('show'); if(onDone) onDone(); }, 1400);
+  let done=false;
+  const finish=()=>{ if(done) return; done=true; overlay.classList.remove('show'); if(onDone) onDone(); };
+  // olqish ovozi tugagach keyingi bosqichga o'tamiz (minimal 1200ms overlay ko'rsatiladi)
+  const t0=Date.now();
+  playAudio(key, ()=>{ const el=Math.max(0,1200-(Date.now()-t0)); setTimeout(finish, el); });
+  // xavfsizlik: ovoz umuman chalinmasa ham 4s dan keyin davom etadi
+  setTimeout(finish, 4000);
 }
 function wrong(el){ haptic('err'); el.classList.add('wrong'); setTimeout(()=>el.classList.remove('wrong'),400); playAudio(rand([D.ui.retry1,D.ui.retry2])); }
 
