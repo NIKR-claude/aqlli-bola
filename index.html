@@ -44,10 +44,13 @@
   .card:active { transform:scale(.95); }
   .card.small { font-size:9vh; }
   .card.correct { animation:pop .5s; box-shadow:0 0 0 6px #4cd964, 0 8px 18px rgba(0,0,0,.2); }
-  .card.wrong { animation:shake .4s; box-shadow:0 0 0 6px #ff5a5a; }
+  .card.wrong { animation:shake .45s; background:#ff3b30 !important; color:#fff; box-shadow:0 0 0 7px #ff3b30, 0 0 22px 4px rgba(255,59,48,.7); }
+  .card.wrong::after { content:"❌"; position:absolute; top:4px; right:8px; font-size:28px; }
+  .chip.wrong { animation:shake .45s; background:#ff3b30 !important; box-shadow:0 0 0 6px #ff3b30, 0 0 18px 3px rgba(255,59,48,.7); }
+  .slot.wrong { animation:shake .45s; background:#ff3b30 !important; box-shadow:0 0 0 5px #ff3b30; }
   .card.hidden-c { background:rgba(255,255,255,.25); font-size:10vh; }
   @keyframes pop { 0%{transform:scale(1)} 50%{transform:scale(1.15)} 100%{transform:scale(1)} }
-  @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-8px)} 75%{transform:translateX(8px)} }
+  @keyframes shake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-10px)} 40%{transform:translateX(10px)} 60%{transform:translateX(-8px)} 80%{transform:translateX(8px)} }
 
   /* sentence builder */
   .sent-slots { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; min-height:80px; margin-bottom:10px; }
@@ -86,25 +89,26 @@ if (tg) { tg.ready(); tg.expand(); }
 const app = document.getElementById('app');
 const overlay = document.getElementById('overlay');
 let stars = 0;
-let audioCache = {};
-let currentAudio = null;
+
+// BITTA ovoz chalg'ich — hech qachon ikki ovoz bir vaqtda chalinmaydi
+const player = new Audio();
+let playToken = 0;
 
 function stopAudio(){
-  if(currentAudio){
-    try { currentAudio.pause(); currentAudio.onended = null; } catch(e){}
-    currentAudio = null;
-  }
+  try { player.pause(); } catch(e){}
+  player.onended = null;
+  playToken++; // eski callbacklarni bekor qiladi
 }
 
 function playAudio(key, cb){
   try {
-    stopAudio(); // oldingi ovozni to'xtatamiz — ustma-ust tushmasin
-    if(!audioCache[key]) audioCache[key] = new Audio('audio/'+key+'.mp3');
-    const a = audioCache[key];
-    currentAudio = a;
-    a.currentTime = 0;
-    a.onended = ()=>{ if(currentAudio===a) currentAudio=null; if(cb) cb(); };
-    a.play().catch(()=>{ if(currentAudio===a) currentAudio=null; if(cb) cb(); });
+    stopAudio();                 // avvalgi ovozni darhol uzamiz
+    const my = playToken;        // shu chalishning navbat raqami
+    player.onended = ()=>{ if(my===playToken && cb) cb(); };
+    player.src = 'audio/'+key+'.mp3';
+    player.currentTime = 0;
+    const p = player.play();
+    if(p && p.catch) p.catch(()=>{ if(my===playToken && cb) cb(); });
   } catch(e){ if(cb) cb(); }
 }
 function haptic(type){ try{ if(tg&&tg.HapticFeedback){ type==='ok'?tg.HapticFeedback.notificationOccurred('success'):tg.HapticFeedback.notificationOccurred('error'); } }catch(e){} }
@@ -140,7 +144,7 @@ function praise(onDone){
   // xavfsizlik: ovoz umuman chalinmasa ham 4s dan keyin davom etadi
   setTimeout(finish, 4000);
 }
-function wrong(el){ haptic('err'); el.classList.add('wrong'); setTimeout(()=>el.classList.remove('wrong'),400); playAudio(rand([D.ui.retry1,D.ui.retry2])); }
+function wrong(el){ haptic('err'); el.classList.add('wrong'); setTimeout(()=>el.classList.remove('wrong'),700); playAudio(rand([D.ui.retry1,D.ui.retry2])); }
 
 function topbar(title){
   return `<div class="topbar">
