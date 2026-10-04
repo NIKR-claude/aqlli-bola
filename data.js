@@ -420,11 +420,75 @@ window.GAME_DATA = {
     "m_xotira": "ui_m_xotira",
     "m_xotira2": "ui_m_xotira2",
     "m_topish": "ui_m_topish",
+    "m_sanab": "ui_m_sanab",
+    "m_qosh": "ui_m_qosh",
+    "m_juft": "ui_m_juft",
+    "m_takror": "ui_m_takror",
+    "qancha": "ui_qancha",
+    "qosh_savol": "ui_qosh_savol",
+    "yodla": "ui_yodla",
+    "takrorla": "ui_takrorla",
     "praise1": "ui_praise1",
     "praise2": "ui_praise2",
     "praise3": "ui_praise3",
     "praise4": "ui_praise4",
     "retry1": "ui_retry1",
     "retry2": "ui_retry2"
-  }
+  },
+  "nums": {
+    "1": {
+      "word": "bir",
+      "audio": "num_1"
+    },
+    "2": {
+      "word": "ikki",
+      "audio": "num_2"
+    },
+    "3": {
+      "word": "uch",
+      "audio": "num_3"
+    },
+    "4": {
+      "word": "to'rt",
+      "audio": "num_4"
+    },
+    "5": {
+      "word": "besh",
+      "audio": "num_5"
+    },
+    "6": {
+      "word": "olti",
+      "audio": "num_6"
+    },
+    "7": {
+      "word": "yetti",
+      "audio": "num_7"
+    },
+    "8": {
+      "word": "sakkiz",
+      "audio": "num_8"
+    },
+    "9": {
+      "word": "to'qqiz",
+      "audio": "num_9"
+    },
+    "10": {
+      "word": "o'n",
+      "audio": "num_10"
+    }
+  },
+  "countables": [
+    "🍎",
+    "🍌",
+    "🍓",
+    "⭐",
+    "🐱",
+    "🐶",
+    "🚗",
+    "🎈",
+    "🌸",
+    "🐥",
+    "🍉",
+    "⚽"
+  ]
 };

@@ -22,11 +22,12 @@
   .prompt { font-size:20px; font-weight:700; text-align:center; margin:6px 0 14px; min-height:28px; text-shadow:0 1px 4px rgba(0,0,0,.2); }
 
   /* MENU */
-  .menu { display:flex; flex-direction:column; gap:14px; justify-content:center; flex:1; }
-  .menu h1 { font-size:30px; text-align:center; margin-bottom:8px; text-shadow:0 3px 10px rgba(0,0,0,.25); }
+  #app { overflow-y:auto; }
+  .menu { display:flex; flex-direction:column; gap:12px; justify-content:flex-start; flex:1; padding-bottom:10px; }
+  .menu h1 { font-size:28px; text-align:center; margin:4px 0 6px; text-shadow:0 3px 10px rgba(0,0,0,.25); }
   .mode-btn {
-    background:#fff; color:#4a3aff; border:none; border-radius:22px; padding:18px 20px;
-    font-size:21px; font-weight:800; cursor:pointer; display:flex; align-items:center; gap:14px;
+    background:#fff; color:#4a3aff; border:none; border-radius:20px; padding:15px 18px;
+    font-size:20px; font-weight:800; cursor:pointer; display:flex; align-items:center; gap:14px;
     box-shadow:0 8px 20px rgba(0,0,0,.18); transition:transform .1s;
   }
   .mode-btn:active { transform:scale(.96); }
@@ -164,6 +165,10 @@ function renderMenu(){
     <button class="mode-btn" onclick="modeDavom()"><span class="ico">➡️</span> Davomini top</button>
     <button class="mode-btn" onclick="modeXotira()"><span class="ico">🧩</span> Nima yo'qoldi?</button>
     <button class="mode-btn" onclick="modeTopish()"><span class="ico">🤔</span> Topishmoq</button>
+    <button class="mode-btn" onclick="modeSanab()"><span class="ico">🔢</span> Sanab top</button>
+    <button class="mode-btn" onclick="modeQosh()"><span class="ico">➕</span> Qo'shib hisobla</button>
+    <button class="mode-btn" onclick="modeJuft()"><span class="ico">🎴</span> Juftini top</button>
+    <button class="mode-btn" onclick="modeTakror()"><span class="ico">🔁</span> Takrorla</button>
   </div>`;
   playAudio('ui_welcome');
 }
@@ -274,6 +279,138 @@ function modeTopish(){
     g.appendChild(c);
   });
   playAudio(r.audio);
+}
+
+/* ---------------- 6. SANAB TOP ---------------- */
+function modeSanab(){
+  const n = 2 + Math.floor(Math.random()*7); // 2..8
+  const emoji = rand(D.countables);
+  // javob variantlari: to'g'ri + 2 yaqin xato
+  let opts = new Set([n]);
+  while(opts.size<3){ let d=n+(Math.floor(Math.random()*5)-2); if(d>=1&&d<=10) opts.add(d); }
+  const options = shuffle([...opts]);
+  let grid='';
+  for(let i=0;i<n;i++) grid+=`<span style="font-size:7vh">${emoji}</span>`;
+  app.innerHTML = topbar('Sanab top') +
+    `<div class="prompt">Nechta bor? Sanab, raqamni bos</div>
+     <div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;align-content:center;flex:1;max-height:40vh">${grid}</div>
+     <div class="sent-pool" id="opt"></div>`;
+  const opt=document.getElementById('opt');
+  options.forEach(o=>{
+    const c=document.createElement('div'); c.className='chip'; c.style.fontSize='34px'; c.style.fontWeight='800'; c.style.color='#4a3aff'; c.textContent=o;
+    c.onclick=()=>{ playAudio('num_'+o); if(o===n){ c.style.boxShadow='0 0 0 5px #4cd964'; setTimeout(()=>praise(modeSanab),700);} else { c.classList.add('wrong'); setTimeout(()=>c.classList.remove('wrong'),700); haptic('err'); playAudio(rand([D.ui.retry1,D.ui.retry2])); } };
+    opt.appendChild(c);
+  });
+  playAudio('ui_qancha');
+}
+
+/* ---------------- 7. QO'SHIB HISOBLA ---------------- */
+function modeQosh(){
+  const a = 1 + Math.floor(Math.random()*4); // 1..4
+  const b = 1 + Math.floor(Math.random()*4); // 1..4
+  const sum = a+b;
+  const emoji = rand(D.countables);
+  let opts = new Set([sum]);
+  while(opts.size<3){ let d=sum+(Math.floor(Math.random()*5)-2); if(d>=1&&d<=10&&d!==sum) opts.add(d); }
+  const options = shuffle([...opts]);
+  const row = (k)=>Array.from({length:k}).map(()=>`<span style="font-size:6vh">${emoji}</span>`).join('');
+  app.innerHTML = topbar("Qo'shib hisobla") +
+    `<div class="prompt">Qancha bo'ladi?</div>
+     <div style="display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;flex:1">
+       <div>${row(a)}</div><div style="font-size:7vh;font-weight:800">+</div><div>${row(b)}</div><div style="font-size:7vh;font-weight:800">=</div><div style="font-size:7vh;font-weight:800">?</div>
+     </div>
+     <div class="sent-pool" id="opt"></div>`;
+  const opt=document.getElementById('opt');
+  options.forEach(o=>{
+    const c=document.createElement('div'); c.className='chip'; c.style.fontSize='34px'; c.style.fontWeight='800'; c.style.color='#4a3aff'; c.textContent=o;
+    c.onclick=()=>{ playAudio('num_'+o); if(o===sum){ c.style.boxShadow='0 0 0 5px #4cd964'; setTimeout(()=>praise(modeQosh),700);} else { c.classList.add('wrong'); setTimeout(()=>c.classList.remove('wrong'),700); haptic('err'); playAudio(rand([D.ui.retry1,D.ui.retry2])); } };
+    opt.appendChild(c);
+  });
+  playAudio('ui_qosh_savol');
+}
+
+/* ---------------- 8. JUFTINI TOP (memory match) ---------------- */
+function modeJuft(){
+  const picks = shuffle(D.countables).slice(0,4);
+  let deck = shuffle([...picks, ...picks].map((e,i)=>({e, id:i})));
+  let open=[], matched=0, lock=false;
+  app.innerHTML = topbar("Juftini top") +
+    `<div class="prompt">Bir xil juftini top</div><div class="grid c2" id="g" style="max-width:420px"></div>`;
+  const g=document.getElementById('g');
+  deck.forEach((card,idx)=>{
+    const c=document.createElement('div'); c.className='card'; c.style.fontSize='11vh'; c.dataset.e=card.e; c.dataset.open='0';
+    c.textContent='❓';
+    c.onclick=()=>{
+      if(lock || c.dataset.open==='1') return;
+      c.dataset.open='1'; c.textContent=card.e; open.push(c);
+      if(open.length===2){
+        lock=true;
+        if(open[0].dataset.e===open[1].dataset.e){
+          haptic('ok');
+          open.forEach(x=>{ x.classList.add('correct'); x.style.pointerEvents='none'; });
+          matched++; open=[]; lock=false;
+          if(matched===picks.length){ setTimeout(()=>praise(modeJuft),600); }
+        } else {
+          setTimeout(()=>{ open.forEach(x=>{ x.dataset.open='0'; x.textContent='❓'; }); open=[]; lock=false; },800);
+        }
+      }
+    };
+    g.appendChild(c);
+  });
+  playAudio('ui_m_juft');
+}
+
+/* ---------------- 9. TAKRORLA (Simon / ketma-ketlik) ---------------- */
+function modeTakror(){
+  // daraja = necha qadam. Har to'g'ri bajarilganda uzayadi.
+  let seqLen = 3;
+  const emojis = shuffle(D.countables).slice(0,4);
+  function round(){
+    const seq = Array.from({length:seqLen}).map(()=>Math.floor(Math.random()*4));
+    app.innerHTML = topbar("Takrorla") +
+      `<div class="prompt" id="pr">Diqqat bilan qara...</div>
+       <div class="grid c2" id="g" style="max-width:360px"></div>`;
+    const g=document.getElementById('g');
+    const cells=emojis.map((e,i)=>{
+      const c=document.createElement('div'); c.className='card'; c.style.fontSize='11vh'; c.textContent=e; c.style.opacity='.5';
+      g.appendChild(c); return c;
+    });
+    // ketma-ketlikni ko'rsatish
+    let i=0;
+    const show=()=>{
+      if(i<seq.length){
+        const cell=cells[seq[i]];
+        cell.style.opacity='1'; cell.classList.add('correct');
+        playAudio('num_'+(i+1));
+        setTimeout(()=>{ cell.style.opacity='.5'; cell.classList.remove('correct'); i++; setTimeout(show,350); }, 650);
+      } else {
+        // endi bola takrorlaydi
+        document.getElementById('pr').textContent='Endi takrorla!';
+        playAudio('ui_takrorla');
+        let step=0;
+        cells.forEach((cell,idx)=>{
+          cell.style.opacity='1';
+          cell.onclick=()=>{
+            if(idx===seq[step]){
+              cell.classList.add('correct'); setTimeout(()=>cell.classList.remove('correct'),300);
+              haptic('ok'); step++;
+              if(step===seq.length){
+                seqLen++; // keyingi daraja uzunroq
+                setTimeout(()=>praise(round),500);
+              }
+            } else {
+              wrong(cell);
+              // xato — shu darajani qaytadan ko'rsatamiz
+              setTimeout(round,900);
+            }
+          };
+        });
+      }
+    };
+    setTimeout(show,700);
+  }
+  playAudio('ui_m_takror');
+  setTimeout(round,1200);
 }
 
 renderMenu();
